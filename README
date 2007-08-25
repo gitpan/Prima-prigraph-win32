@@ -1,26 +1,9 @@
-PRIGRAPH.DLL for win32
-----------------------
+Prima needs image libraries to work correctly. Unix and cygwin builds rely on
+existing installations of libjpeg, libungif, libtiff, libpng,
+libXpm, and libX11, all of them being optional dependencies.
 
-This binary is compiled prigraph library by MSVC 5.0 . It can be used for
-linking with MSVC, CYGWIN and MINGW32 . PRIGRAPH.DLL is to be copied to your
-PATH.
-
-LINKING WITH MSVC
------------------
-
-Copy PRIGRAPH.LIB into your LIBPATH.
-
-LINKING WITH CYGWIN/MINGW32
----------------------------
-
-Copy LIBPRIGRAPH.A into your LIBPATH. If for any reason it is not recognized by
-your compiler, try to reinstantiate the file from prigraph.dll by running
-
-   dlltool -U --def prigraph.def --dllname prigraph.dll --output-lib libprigraph.a 
+This binary distribution provides support for the BMP,PCX,GIF,JPEG,TIFF,PNG,XBM,XPM 
+graphic formats, among others, for MSVC and cygwin builds.
 
 
-INFO
-----
-Source available at http://prima.eu.org/download/libprigraph.zip
-
-Dmitry Karasik, January 2004
+Dmitry Karasik <dmitry@karasik.eu.org>

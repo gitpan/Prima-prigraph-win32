@@ -1,8 +1,7 @@
+MANIFEST
 Makefile.PL
 prigraph.dll
 prigraph.lib
 libprigraph.a
-prigraph.def
-prigraph.pm
+win32.pm
 README
-MANIFEST
