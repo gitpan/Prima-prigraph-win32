@@ -1,28 +1,44 @@
+# $Id: Makefile.PL,v 1.5 2007/09/17 20:51:33 dk Exp $
 use strict;
 use Config;
+use ExtUtils::Packlist;
 
-my $lib1 = "$Config{installsitelib}\\auto\\Prima";
-my $lib2 = "$Config{installsitelib}\\Prima\\prigraph";
+my $lib1 = "$Config{installsitearch}\\auto\\Prima";
+my $lib2 = "$Config{installsitearch}\\Prima\\prigraph";
+my $lib3 = $Config{installsitearch};
 
-my $version;
+my ( $version, $V1, $V2);
 open F, 'win32.pm';
 while (<F>) {
 	next unless /VERSION\s*=\s*\'([\d\.]+)\'/;
 	$version = $1;
+	$version =~ /^(\d+)\.(\d+)$/;
+	( $V1, $V2) = ( $1, $2);
 }
 close F;
+
 die "Cannot determine version from win32.pm\n"
 	unless defined $version;
-$version = "Prima-prigraph-win32-$version";
+my $name = "Prima-prigraph-win32";
+my $dist = "$name-$version";
 
 open F, "< MANIFEST" or die "Cannot open MANIFEST:$!\n";
 my @F     = <F>;
-my $dist_files_copy = join("\n\t", map { chomp; "copy /b $_ $version"} @F);
-my $dist_files_rm   = join("\n\t", map { chomp; "del $version\\$_" } @F);
+my $dist_files_copy = join("\n\t", map { chomp; "\@\$(CP) $_ $dist"} @F);
+my $dist_files_rm   = join("\n\t", map { chomp; "\@\$(RM) $dist\\$_" } @F);
 close F;
+my $packlist = ExtUtils::Packlist-> new();
+$packlist->{"$lib1/$_"}++ for 'prigraph.dll';
+$packlist->{"$lib2/$_"}++ for 'win32.pm';
+$packlist->{"$lib3/$_"}++ for 'prigraph.lib', 'prigraph.def', 'libprigraph.a';
+$packlist->write('.packlist');
 
 open F, "> Makefile" or die "Cannot open Makefile:$!\n";
 print F <<MAKEFILE;
+CP=copy /b /y
+RM=del
+DIST=$dist
+
 all:
 
 $lib1:
@@ -31,26 +47,35 @@ $lib1:
 $lib2:
 	mkdir $lib2
 
-install: $lib1 $lib2
-	copy /b prigraph.dll $lib1
-	copy /b prigraph.lib $lib1
-	copy /b libprigraph.a $lib1
-	copy win32.pm $lib2
+$lib3:
+	mkdir $lib3
+
+ppd:
+	$^X -e "print qq{<SOFTPKG NAME=\\"$name\\" VERSION=\\"$V1,$V2,0,0\\">\\n}. qq{\\t<TITLE>Prima prigraph for win32</TITLE>\\n}. qq{\\t<ABSTRACT>Default image codec for Prima</ABSTRACT>\\n}. qq{\\t<AUTHOR>Dmitry Karasik</AUTHOR>\\n}. qq{\\t<IMPLEMENTATION>\\n}. qq{\\t\\t<OS NAME=\\"$^O\\" />\\n}. qq{\\t\\t<ARCHITECTURE NAME=\\"$Config{myarchname}\\" />\\n}. qq{\\t\\t<CODEBASE HREF=\\"http://www.prima.eu.org/download/gbm-bin-win32.tar.gz\\" />\\n}. qq{\\t</IMPLEMENTATION>\\n}. qq{</SOFTPKG>\\n}" > $name.ppd
+
+install: $lib1 $lib2 $lib3
+	\@\$(CP) prigraph.dll $lib1
+	\@\$(CP) prigraph.lib $lib3
+	\@\$(CP) prigraph.def $lib3
+	\@\$(CP) libprigraph.a $lib3
+	\@\$(CP) win32.pm $lib2
+	\@\$(CP) .packlist $lib2
 
 deinstall:
-	del $lib1\\prigraph.dll
-	del $lib1\\prigraph.lib
-	del $lib1\\libprigraph.a
-	del $lib2\\win32.pm
+	\@\$(RM) $lib1\\prigraph.dll
+	\@\$(RM) $lib1\\prigraph.lib
+	\@\$(RM) $lib1\\libprigraph.a
+	\@\$(RM) $lib2\\win32.pm
+	\@\$(RM) $lib2\\.packlist
 	rmdir $lib1
 	rmdir $lib2
 
 dist:
-	mkdir $version
+	mkdir $dist
 	$dist_files_copy
-	zip -r $version.zip $version
+	zip -r $dist.zip $dist
 	$dist_files_rm
-	rmdir $version
+	rmdir $dist
 
 test:
 MAKEFILE
