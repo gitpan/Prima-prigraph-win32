@@ -1,7 +1,7 @@
 package Prima::prigraph::win32;
 use vars qw($VERSION);
 
-$VERSION = '1.02';
+$VERSION = '1.03';
 
 1;
 
