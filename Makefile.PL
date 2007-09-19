@@ -1,10 +1,10 @@
-# $Id: Makefile.PL,v 1.5 2007/09/17 20:51:33 dk Exp $
+# $Id: Makefile.PL,v 1.6 2007/09/19 19:10:20 dk Exp $
 use strict;
 use Config;
 use ExtUtils::Packlist;
 
-my $lib1 = "$Config{installsitearch}\\auto\\Prima";
-my $lib2 = "$Config{installsitearch}\\Prima\\prigraph";
+my $lib1 = "$Config{installsitearch}/auto/Prima";
+my $lib2 = "$Config{installsitearch}/Prima/prigraph";
 my $lib3 = $Config{installsitearch};
 
 my ( $version, $V1, $V2);
@@ -33,22 +33,36 @@ $packlist->{"$lib2/$_"}++ for 'win32.pm';
 $packlist->{"$lib3/$_"}++ for 'prigraph.lib', 'prigraph.def', 'libprigraph.a';
 $packlist->write('.packlist');
 
+my ( $CP, $RM, $MKDIR);
+if ( $^O eq 'cygwin') {
+	$CP = 'cp';
+	$RM = 'rm';
+	$MKDIR = 'mkdir -p';
+	s[\\][/]g for $lib1, $lib2, $lib3;
+} else {
+	$CP = 'copy /b /y';
+	$RM = 'del';
+	$MKDIR = 'mkdir';
+	s[/][\\]g for $lib1, $lib2, $lib3;
+}
+
 open F, "> Makefile" or die "Cannot open Makefile:$!\n";
 print F <<MAKEFILE;
-CP=copy /b /y
-RM=del
+CP=$CP
+RM=$RM
+MKDIR=$MKDIR
 DIST=$dist
 
 all:
 
 $lib1:
-	mkdir $lib1
+	\$(MKDIR) $lib1
 
 $lib2:
-	mkdir $lib2
+	\$(MKDIR) $lib2
 
 $lib3:
-	mkdir $lib3
+	\$(MKDIR) $lib3
 
 ppd:
 	$^X -e "print qq{<SOFTPKG NAME=\\"$name\\" VERSION=\\"$V1,$V2,0,0\\">\\n}. qq{\\t<TITLE>Prima prigraph for win32</TITLE>\\n}. qq{\\t<ABSTRACT>Default image codec for Prima</ABSTRACT>\\n}. qq{\\t<AUTHOR>Dmitry Karasik</AUTHOR>\\n}. qq{\\t<IMPLEMENTATION>\\n}. qq{\\t\\t<OS NAME=\\"$^O\\" />\\n}. qq{\\t\\t<ARCHITECTURE NAME=\\"$Config{myarchname}\\" />\\n}. qq{\\t\\t<CODEBASE HREF=\\"http://www.prima.eu.org/download/gbm-bin-win32.tar.gz\\" />\\n}. qq{\\t</IMPLEMENTATION>\\n}. qq{</SOFTPKG>\\n}" > $name.ppd
@@ -63,19 +77,21 @@ install: $lib1 $lib2 $lib3
 
 deinstall:
 	\@\$(RM) $lib1\\prigraph.dll
-	\@\$(RM) $lib1\\prigraph.lib
-	\@\$(RM) $lib1\\libprigraph.a
+	\@\$(RM) $lib3\\prigraph.lib
+	\@\$(RM) $lib3\\libprigraph.a
 	\@\$(RM) $lib2\\win32.pm
 	\@\$(RM) $lib2\\.packlist
 	rmdir $lib1
 	rmdir $lib2
 
 dist:
-	mkdir $dist
+	\$(MKDIR) $dist
 	$dist_files_copy
 	zip -r $dist.zip $dist
 	$dist_files_rm
 	rmdir $dist
+
+clean:
 
 test:
 MAKEFILE
