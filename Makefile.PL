@@ -1,11 +1,24 @@
-# $Id: Makefile.PL,v 1.6 2007/09/19 19:10:20 dk Exp $
+# $Id: Makefile.PL,v 1.7 2007/09/20 20:08:16 dk Exp $
 use strict;
 use Config;
 use ExtUtils::Packlist;
 
-my $lib1 = "$Config{installsitearch}/auto/Prima";
+my $lib1 = $Config{installsitebin};
 my $lib2 = "$Config{installsitearch}/Prima/prigraph";
 my $lib3 = $Config{installsitearch};
+
+my @path = split $Config{path_sep}, $ENV{PATH};
+my %path = map { $_ => 1 } @path;
+unless ( $path{ $lib1}) {
+	warn "** warning, $lib1 is not in PATH.\n";
+	for ( @path) {
+		next unless -d $_ and -w _;
+		warn "** installing prigraph.dll in $_ instead\n";
+		$lib1 = $_;
+		last;
+	}
+}
+
 
 my ( $version, $V1, $V2);
 open F, 'win32.pm';
